@@ -1,15 +1,22 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
-import { GoogleLogin } from "@react-oauth/google";
+import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
+import { gapi } from "gapi-script";
+import jwt_decode from "jwt-decode";
 import shareVideo from "../assets/share.mp4";
 import logo from "../assets/logowhite.png";
+import { client } from "../client";
 
 const Login = () => {
+  const navigate = useNavigate();
+
   function handleCallbackResponse(response) {
     localStorage.setItem("user", JSON.stringify(response.profileObj));
 
-    const { name, googleId, imageUrl } = response.profileObj;
+    const name = response.profileObj;
+    const googleId = response.profileObj;
+    const imageUrl = response.profileObj;
 
     const doc = {
       _id: googleId,
@@ -17,20 +24,29 @@ const Login = () => {
       userName: name,
       image: imageUrl,
     };
+
+    client.createIfNotExists(doc).then(() => {
+      navigate("/", { replace: true });
+    });
   }
-
   useEffect(() => {
-    google.accounts.id.initialize({
-      client_id:
-        "195480587275-t4aa4elugboueku33aol8odtgfpdi2t9.apps.googleusercontent.com",
-      callback: handleCallbackResponse,
-    });
-
-    google.accounts.id.renderButton(document.getElementById("signinDiv"), {
-      theme: "outline",
-      size: "large",
-    });
+    const initClient = () => {
+      gapi.auth2.init({
+        clientId: import.meta.env.VITE_APP_GOOGLE_API_TOKEN,
+        callback: handleCallbackResponse,
+        scopes: "https://www.googleapis.com/auth/cloud-platform.read-only	",
+      });
+    };
+    gapi.load("client:auth2", initClient);
+    // google.accounts.id.renderButton(document.getElementById("signinDiv"), {
+    //   theme: "outline",
+    //   size: "large",
+    // });
   }, []);
+  // google.accounts.id.initialize({
+  //   client_id: import.meta.env.VITE_APP_GOOGLE_API_TOKEN,
+  //   callback: handleCallbackResponse,
+  // });
 
   return (
     <div
@@ -53,7 +69,24 @@ const Login = () => {
           </div>
 
           <div className="shadow-2xl">
-            <div id="signinDiv"></div>
+            <GoogleOAuthProvider>
+              <GoogleLogin
+                client_id={import.meta.env.VITE_APP_GOOGLE_API_TOKEN}
+                render={(renderProps) => (
+                  <button
+                    type="button"
+                    className="bg-mainColor flex justify-center items-center p-3 rounded-lg cursor-pointer outline-none"
+                    onClick={renderProps.onClick}
+                    disabled={renderProps.disabled}
+                  >
+                    <FcGoogle className="mr-4" /> Sign in with google
+                  </button>
+                )}
+                onSuccess={handleCallbackResponse}
+                onFailure={handleCallbackResponse}
+                cookiePolicy="single_host_origin"
+              />
+            </GoogleOAuthProvider>
           </div>
         </div>
       </div>
