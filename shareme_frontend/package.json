@@ -23,6 +23,7 @@
     "react-masonry-css": "^1.0.16",
     "react-router-dom": "^6.4.2",
     "script": "^0.1.4",
+    "url": "^0.11.0",
     "uuid": "^9.0.0"
   },
   "devDependencies": {

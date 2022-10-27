@@ -11,29 +11,29 @@ import { client } from "../client";
 const Login = () => {
   const navigate = useNavigate();
 
-  function handleCallbackResponse(response) {
-    localStorage.setItem("user", JSON.stringify(response.profileObj));
+  function responseGoogle(response) {
+    const userResponse = jwt_decode(response.credential);
+    console.log(userResponse);
+    localStorage.setItem("user", JSON.stringify(userResponse));
 
-    const name = response.profileObj;
-    const googleId = response.profileObj;
-    const imageUrl = response.profileObj;
+    const { name, sub, picture } = userResponse;
 
     const doc = {
-      _id: googleId,
+      _id: sub,
       _type: "user",
       userName: name,
-      image: imageUrl,
+      image: picture,
     };
-
     client.createIfNotExists(doc).then(() => {
       navigate("/", { replace: true });
     });
   }
+
   useEffect(() => {
     const initClient = () => {
       gapi.auth2.init({
         clientId: import.meta.env.VITE_APP_GOOGLE_API_TOKEN,
-        callback: handleCallbackResponse,
+        callback: responseGoogle,
         scopes: "https://www.googleapis.com/auth/cloud-platform.read-only	",
       });
     };
@@ -69,21 +69,12 @@ const Login = () => {
           </div>
 
           <div className="shadow-2xl">
-            <GoogleOAuthProvider>
+            <GoogleOAuthProvider
+              clientId={`${import.meta.env.VITE_APP_GOOGLE_API_TOKEN}`}
+            >
               <GoogleLogin
-                client_id={import.meta.env.VITE_APP_GOOGLE_API_TOKEN}
-                render={(renderProps) => (
-                  <button
-                    type="button"
-                    className="bg-mainColor flex justify-center items-center p-3 rounded-lg cursor-pointer outline-none"
-                    onClick={renderProps.onClick}
-                    disabled={renderProps.disabled}
-                  >
-                    <FcGoogle className="mr-4" /> Sign in with google
-                  </button>
-                )}
-                onSuccess={handleCallbackResponse}
-                onFailure={handleCallbackResponse}
+                onSuccess={responseGoogle}
+                onFailure={responseGoogle}
                 cookiePolicy="single_host_origin"
               />
             </GoogleOAuthProvider>
